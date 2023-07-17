@@ -1,10 +1,11 @@
-from text import chinese, cleaned_text_to_sequence
-
+from text import chinese, cleaned_text_to_sequence, symbols
 
 
 def clean_text(text):
     norm_text = chinese.text_normalize(text)
     phones = chinese.g2p(norm_text)
+    for ph in phones:
+        assert ph in symbols
     return phones
 
 def text_to_sequence(text):
