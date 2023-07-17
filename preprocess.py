@@ -8,22 +8,20 @@ import sys
 import subprocess
 from tqdm import tqdm
 import argparse
-from dp.phonemizer import Phonemizer
 import os
 import pyloudnorm as pyln
-from multiprocessing import Pool
+from text.cleaner import clean_text
 import torchaudio
 import torch
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--giga_speech_dir', type=str, required=True)
+parser.add_argument('--wenet_speech_dir', type=str, required=True)
 parser.add_argument('--outputdir', type=str, required=True)
 
 args = parser.parse_args()
+DATA_DIR = Path(args.wenet_speech_dir)
+metadata_path = Path(args.wenet_speech_dir) / Path('WenetSpeech.json')
 
-DATA_DIR = Path(args.giga_speech_dir) / Path('audio')
-metadata_path = Path(args.giga_speech_dir) / Path('GigaSpeech.json')
-phonemizer = Phonemizer.from_checkpoint('en_us_cmudict_forward.pt')
 output = {}
 
 print ('Loading Labelfile...')
@@ -43,8 +41,8 @@ meter = pyln.Meter(16000)
 
 def run(section):
     output_t, output_d = dict(), dict()
-    for audiofile in tqdm(section[:20]):
-        opus_path = os.path.join(args.giga_speech_dir, audiofile['path'])
+    for audiofile in tqdm(section):
+        opus_path = os.path.join(args.wenet_speech_dir, audiofile['path'])
         if opus_path in all_file_paths:
             #Check if one of the segments in file:
             start_run = False
@@ -78,15 +76,9 @@ def run(section):
                     seg_audio = torch.FloatTensor(seg_audio).unsqueeze(0)
                     torchaudio.save(sentence_path, seg_audio, sample_rate=sr, format='wav', encoding='PCM_S', bits_per_sample=16)
                     #Text
-                    text = sentence['text_tn'].lower().split()
-                    for i, word in enumerate(text):
-                        if word == '<comma>':
-                            text[i] = ','
-                        elif word == '<period>':
-                            text[i] = '.'
-                    text = [x for x in text if '<' not in x]
-                    text = ' '.join(text)
-                    phonemes = phonemizer(text, lang='en_us').replace('[', ' ').replace(']', ' ')
+                    text = sentence['text']
+                    phonemes = clean_text(text)
+                    phonemes = " ".join(phonemes)
                     name = f'{sentence_sid}.wav'
                     if sentence_sid in training:
                         output_t[name] = {'text': text, 'duration': sentence['end_time'] - sentence['begin_time'], 'phoneme': phonemes}
@@ -104,6 +96,6 @@ if __name__ == '__main__':
     print (labels[0]['path'])
     output_t, output_d = run(labels)
     with open(os.path.join(args.outputdir, 'train.json'), 'w') as f:
-        json.dump(output_t, f, indent=2)
+        json.dump(output_t, f, indent=2, ensure_ascii=False)
     with open(os.path.join(args.outputdir, 'dev.json'), 'w') as f:
-        json.dump(output_d, f, indent=2)
+        json.dump(output_d, f, indent=2, ensure_ascii=False)

@@ -20,7 +20,7 @@ class Wav2TTS_infer(nn.Module):
         self.hp.init = 'std'
         self.TTSdecoder = TTSDecoder(hp, len(self.hp.phoneset))
         self.spkr_linear = nn.Linear(512, hp.hidden_size)
-        self.phone_embedding = nn.Embedding(len(self.hp.phoneset), hp.hidden_size, padding_idx=self.hp.phoneset.index('<pad>'))
+        self.phone_embedding = nn.Embedding(len(self.hp.phoneset), hp.hidden_size, padding_idx=self.hp.phoneset.index('_'))
         self.load()
         self.spkr_embedding = Inference("pyannote/embedding", window="whole")
         self.vocoder = Vocoder(hp.vocoder_config_path, hp.vocoder_ckpt_path, with_encoder=True)
@@ -61,7 +61,7 @@ class Wav2TTS_infer(nn.Module):
             for i, ph in enumerate(phone_features):
                 to_pad = maxlen - len(ph)
                 pad = np.zeros([to_pad,], dtype=np.float32)
-                pad.fill(self.hp.phoneset.index('<pad>'))
+                pad.fill(self.hp.phoneset.index('_'))
                 phone_features[i] = np.concatenate([ph, pad], 0)
                 mask = [False] * len(ph)+ [True] * to_pad
                 phone_masks.append(mask)

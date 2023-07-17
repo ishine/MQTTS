@@ -11,6 +11,9 @@ from pyannote.audio import Inference
 
 import torch.nn.functional as F
 
+from text import symbols
+
+
 def random_crop(x, maxseqlen):
     if x.shape[0] >= maxseqlen:
         offset = random.randrange(x.shape[0] - maxseqlen + 1)
@@ -33,7 +36,7 @@ class QuantizeDataset(data.Dataset):
             self.text = json.load(f) #{name: {text:, phoneme:, ..., duration: }}
         self.datasetbase = [x for x in self.text.keys()]
         self.dataset = [os.path.join(self.hp.datadir, x) for x in self.datasetbase]
-        self.phoneset = ['<pad>', 'AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'B', 'CH', 'D', 'DH', 'EH', 'ER', 'EY', 'F', 'G', 'HH', 'IH', 'IY', 'JH', 'K', 'L', 'M', 'N', 'NG', 'OW', 'OY', 'P', 'R', 'S', 'SH', 'T', 'TH', 'UH', 'UW', 'V', 'W', 'Y', 'Z', 'ZH', ',', '.']
+        self.phoneset = symbols
         print (self.phoneset)
         if self.hp.speaker_embedding_dir is None:
             self.spkr_embedding = Inference("pyannote/embedding", window="whole")

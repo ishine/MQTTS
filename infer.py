@@ -11,6 +11,8 @@ import json
 import numpy as np
 from collections import Counter
 
+from text import symbols
+
 parser = argparse.ArgumentParser()
 
 #Path
@@ -44,7 +46,7 @@ parser.add_argument('--prior_frame', type=int, default=3)
 
 args = parser.parse_args()
 
-args.phoneset = ['<pad>', 'AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'B', 'CH', 'D', 'DH', 'EH', 'ER', 'EY', 'F', 'G', 'HH', 'IH', 'IY', 'JH', 'K', 'L', 'M', 'N', 'NG', 'OW', 'OY', 'P', 'R', 'S', 'SH', 'T', 'TH', 'UH', 'UW', 'V', 'W', 'Y', 'Z', 'ZH', ',', '.']
+args.phoneset = symbols
 
 with open(args.config_path, 'r') as f:
     argdict = json.load(f)

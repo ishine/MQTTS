@@ -25,7 +25,7 @@ class Wav2TTS(pl.LightningModule):
         self.TTSdecoder = TTSDecoder(hp, len(self.data.phoneset))
         self.n_decode_codes = self.TTSdecoder.transducer.n_decoder_codes
         self.cross_entropy = nn.CrossEntropyLoss(label_smoothing=self.hp.label_smoothing)
-        self.phone_embedding = nn.Embedding(len(self.data.phoneset), hp.hidden_size, padding_idx=self.data.phoneset.index('<pad>'))
+        self.phone_embedding = nn.Embedding(len(self.data.phoneset), hp.hidden_size, padding_idx=self.data.phoneset.index('_'))
         self.spkr_linear = nn.Linear(512, hp.hidden_size)
         if self.hp.pretrained_path:
             self.load()
