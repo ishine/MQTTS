@@ -9,7 +9,7 @@ from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
 from pyannote.audio import Model,Inference
 
-from quantizer.speaker_embbedding import embedding_model_path
+from speaker_embbedding import embedding_model_path
 
 MAX_WAV_VALUE = 32768.0
 
