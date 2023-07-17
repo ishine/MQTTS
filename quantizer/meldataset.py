@@ -7,7 +7,9 @@ import numpy as np
 from librosa.util import normalize
 from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
-from pyannote.audio import Inference
+from pyannote.audio import Model,Inference
+
+from quantizer.speaker_embbedding import embedding_model_path
 
 MAX_WAV_VALUE = 32768.0
 
@@ -63,7 +65,7 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
     y = y.squeeze(1)
 
     spec = torch.stft(y, n_fft, hop_length=hop_size, win_length=win_size, window=hann_window[str(y.device)],
-                      center=center, pad_mode='reflect', normalized=False, onesided=True)
+                      center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=False)
 
     spec = torch.sqrt(spec.pow(2).sum(-1)+(1e-9))
 
@@ -108,7 +110,8 @@ class MelDataset(torch.utils.data.Dataset):
         self.device = device
         self.fine_tuning = fine_tuning
         self.base_mels_path = base_mels_path
-        self.spkr_embedding = Inference("pyannote/embedding", window="whole")
+        model = Model.from_pretrained(embedding_model_path)
+        self.spkr_embedding = Inference(model, window="whole")
 
     def __getitem__(self, index):
         filename = self.audio_files[index]

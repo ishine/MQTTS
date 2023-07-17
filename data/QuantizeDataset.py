@@ -7,10 +7,11 @@ import soundfile as sf
 import random
 from pathlib import Path
 from librosa.util import normalize
-from pyannote.audio import Inference
+from pyannote.audio import Model,Inference
 
 import torch.nn.functional as F
 
+from quantizer.speaker_embbedding import embedding_model_path
 from text import symbols
 
 
@@ -39,8 +40,8 @@ class QuantizeDataset(data.Dataset):
         self.phoneset = symbols
         print (self.phoneset)
         if self.hp.speaker_embedding_dir is None:
-            self.spkr_embedding = Inference("pyannote/embedding", window="whole")
-
+            model = Model.from_pretrained(embedding_model_path)
+            self.spkr_embedding = Inference(model, window="whole")
         #Print statistics:
         l = len(self.dataset)
         print (f'Total {l} examples')

@@ -9,9 +9,12 @@ from modules.vocoder import Vocoder
 import soundfile as sf
 import librosa
 from librosa.util import normalize
-from pyannote.audio import Inference
+from pyannote.audio import Model,Inference
 import random
 from tqdm import tqdm
+
+from quantizer.speaker_embbedding import embedding_model_path
+
 
 class Wav2TTS_infer(nn.Module):
     def __init__(self, hp):
@@ -22,7 +25,8 @@ class Wav2TTS_infer(nn.Module):
         self.spkr_linear = nn.Linear(512, hp.hidden_size)
         self.phone_embedding = nn.Embedding(len(self.hp.phoneset), hp.hidden_size, padding_idx=self.hp.phoneset.index('_'))
         self.load()
-        self.spkr_embedding = Inference("pyannote/embedding", window="whole")
+        model = Model.from_pretrained(embedding_model_path)
+        self.spkr_embedding = Inference(model, window="whole")
         self.vocoder = Vocoder(hp.vocoder_config_path, hp.vocoder_ckpt_path, with_encoder=True)
 
     def load(self):

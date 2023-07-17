@@ -31,10 +31,10 @@ shuffle(all_sid)
 
 os.makedirs("datasets", exist_ok=True)
 with open("datasets/training.txt", 'w') as f:
-    for sid in all_sid[:-1000]:
+    for sid in all_sid[:-500]:
         f.write(sid+'\n')
 
 with open("datasets/validation.txt", 'w') as f:
-    for sid in all_sid[-1000:]:
+    for sid in all_sid[-500:]:
         f.write(sid+'\n')
 

@@ -3,11 +3,13 @@ import argparse
 import soundfile as sf
 from pathlib import Path
 import numpy as np
-from pyannote.audio import Inference
+from pyannote.audio import Model,Inference
 import json
 from librosa.util import normalize
 import torch
 import os
+
+from quantizer.speaker_embbedding import embedding_model_path
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--datadir', type=str, required=True)
@@ -17,7 +19,8 @@ args = parser.parse_args()
 with open(args.metapath, 'r') as f:
     meta = json.load(f)
 
-spkr_embedding_model = Inference("pyannote/embedding", window="whole", device='cuda')
+model = Model.from_pretrained(embedding_model_path)
+spkr_embedding_model = Inference(model, window="whole", device='cuda')
 
 def spkr_embed(path):
     ref, sampling_rate = sf.read(path)
