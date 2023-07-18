@@ -48,6 +48,7 @@ def run(section):
     with open(os.path.join(args.outputdir, 'cleaned_filelist.txt'), 'w') as cleaned_filelist:
         output_t, output_d = dict(), dict()
         for audiofile in tqdm(section):
+            snr_sum=0
             opus_path = os.path.join(args.wenet_speech_dir, audiofile['path'])
             if opus_path in all_file_paths:
                 #Check if one of the segments in file:
@@ -75,8 +76,9 @@ def run(section):
                         seg_audio = audio[:, begin_time: end_time].numpy().mean(0)
 
                         snr = wada_snr_torch(seg_audio)
+                        snr_sum += snr
                         threshold = 20
-                        if snr < threshold:
+                        if snr < threshold or sentence['end_time'] - sentence['begin_time']>15:
                             skip_cnt += 1
                             continue
                         valid_cnt += 1
@@ -101,7 +103,7 @@ def run(section):
                             output_d[name] = {'text': text, 'duration': sentence['end_time'] - sentence['begin_time'], 'phoneme': phonemes}
                 #Clean-up
                 Path(wav_path).unlink()
-                print (f'Total files: {skip_cnt+valid_cnt}, Skipped {skip_cnt} files, Valid {valid_cnt} files')
+                print (f'Total files: {skip_cnt+valid_cnt}, Skipped {skip_cnt} files, Valid {valid_cnt} files, Average SNR: {snr_sum/len(audiofile["segments"])}')
     return output_t, output_d
 
 if __name__ == '__main__':
