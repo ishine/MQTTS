@@ -24,7 +24,7 @@ parser.add_argument('--config_path', type=str, required=True)
 parser.add_argument('--spkr_embedding_path', type=str, default=None)
 
 #Data
-parser.add_argument('--sample_rate', type=int, default=16000)
+parser.add_argument('--sample_rate', type=int, default=32000)
 parser.add_argument('--batch_size', type=int, default=32)
 
 #Sampling

@@ -74,7 +74,7 @@ parser.add_argument('--max_output_length', type=int, default=1500)
 parser.add_argument('--phone_context_window', type=int, default=3)
 
 #Data
-parser.add_argument('--sample_rate', type=int, default=16000)
+parser.add_argument('--sample_rate', type=int, default=32000)
 parser.add_argument('--n_codes', type=int, default=160)
 parser.add_argument('--n_cluster_groups', type=int, default=4)
 

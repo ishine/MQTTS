@@ -123,7 +123,7 @@ class MelDataset(torch.utils.data.Dataset):
                     audio = normalize(audio) * 0.95
             except:
                 print (f"Error on audio: {filename}")
-                audio = np.random.normal(size=(160000,)) * 0.05
+                audio = np.random.normal(size=(320000,)) * 0.05
                 sampling_rate = self.sampling_rate
             self.cached_wav = audio
             if sampling_rate != self.sampling_rate:
