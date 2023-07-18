@@ -16,7 +16,7 @@ with open("datasets/training.txt", 'w') as f1:
         f1.write(name+'\n')
         phones = clean_text(text)
         phones = " ".join(phones)
-        # duration = librosa.get_duration(filename=f"datasets/audios/{name}.wav")
+        duration = librosa.get_duration(filename=f"datasets/audios/{name}.wav")
         labels[f"{name}.wav"] = {
             "text": text,
             "phoneme": phones,
@@ -36,7 +36,7 @@ with open("datasets/validation.txt", 'w') as f1:
         f1.write(name+'\n')
         phones = clean_text(text)
         phones = " ".join(phones)
-        # duration = librosa.get_duration(filename=f"datasets/audios/{name}.wav")
+        duration = librosa.get_duration(filename=f"datasets/audios/{name}.wav")
         labels[f"{name}.wav"] = {
             "text": text,
             "phoneme": phones,
