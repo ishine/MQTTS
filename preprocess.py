@@ -78,9 +78,23 @@ def run(section):
                         snr = wada_snr_torch(seg_audio)
                         snr_sum += snr
                         threshold = 20
-                        if snr < threshold or sentence['end_time'] - sentence['begin_time']>15:
+                        if snr < threshold:
                             skip_cnt += 1
                             continue
+                        if sentence['end_time'] - sentence['begin_time']>15:
+                            print("sentence too long, sentence: {}".format(sentence_sid))
+                            skip_cnt += 1
+                            continue
+
+                        text = sentence['text']
+                        try:
+                            phonemes = clean_text(text)
+                        except:
+                            print("clean text failed!, text: {}".format(text))
+                            print("clean text failed!, text: {}".format(text))
+                            skip_cnt += 1
+                            continue
+
                         valid_cnt += 1
                         cleaned_filelist.write(f'{sentence_sid}\n')
 
@@ -92,9 +106,7 @@ def run(section):
                         seg_audio[-1600:] *= fade_out
                         seg_audio = torch.FloatTensor(seg_audio).unsqueeze(0)
                         torchaudio.save(sentence_path, seg_audio, sample_rate=sr, format='wav', encoding='PCM_S', bits_per_sample=16)
-                        #Text
-                        text = sentence['text']
-                        phonemes = clean_text(text)
+
                         phonemes = " ".join(phonemes)
                         name = f'{sentence_sid}.wav'
                         if sentence_sid in training:
