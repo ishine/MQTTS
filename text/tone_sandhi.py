@@ -337,8 +337,15 @@ class ToneSandhi():
         except:
             print("_merge_yi failed")
         seg = self._merge_reduplication(seg)
-        seg = self._merge_continuous_three_tones(seg)
-        seg = self._merge_continuous_three_tones_2(seg)
+        try:
+            seg = self._merge_continuous_three_tones(seg)
+        except:
+            print("_merge_continuous_three_tones failed")
+        try:
+            seg = self._merge_continuous_three_tones_2(seg)
+        except:
+            print("_merge_continuous_three_tones_2 failed")
+
         seg = self._merge_er(seg)
         return seg
 
