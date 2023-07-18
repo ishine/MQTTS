@@ -26,7 +26,8 @@ class Wav2TTS(pl.LightningModule):
         self.n_decode_codes = self.TTSdecoder.transducer.n_decoder_codes
         self.cross_entropy = nn.CrossEntropyLoss(label_smoothing=self.hp.label_smoothing)
         self.phone_embedding = nn.Embedding(len(self.data.phoneset), hp.hidden_size, padding_idx=self.data.phoneset.index('_'))
-        self.spkr_linear = nn.Linear(512, hp.hidden_size)
+        self.sid_embedding = nn.Embedding(300, hp.hidden_size)
+        # self.spkr_linear = nn.Linear(512, hp.hidden_size)
         if self.hp.pretrained_path:
             self.load()
         else:
@@ -94,9 +95,7 @@ class Wav2TTS(pl.LightningModule):
         return [optimizer_adam], [scheduler_adam]
 
     def training_step(self, batch, batch_idx):
-        #Deal with speaker embedding
-        speaker_embedding = F.normalize(batch['speaker'], dim=-1)
-        speaker_embedding = self.spkr_linear(F.dropout(speaker_embedding, self.hp.speaker_embed_dropout))
+        speaker_embedding = self.sid_embedding(batch['sid'])
         #Deal with phone segments
         phone_features = self.phone_embedding(batch['phone'])
         #Run decoder
@@ -121,9 +120,9 @@ class Wav2TTS(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         #Batch size = 1
-        spkr, q_s, q_e, phone, ground_truth = batch
+        spkr, q_s, q_e, phone, ground_truth, sid = batch
         norm_spkr = F.normalize(spkr, dim=-1)
-        spkr = self.spkr_linear(norm_spkr)
+        spkr = self.sid_embedding(sid.squeeze(0))
         phone_features = self.phone_embedding(phone)
         recons_segments = self.TTSdecoder(q_s, phone_features, spkr, None, None)
         target = recons_segments['logits'].view(-1, self.n_decode_codes)
