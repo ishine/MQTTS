@@ -96,7 +96,8 @@ def train(rank, a, h):
                               sampler=train_sampler,
                               batch_size=h.batch_size,
                               pin_memory=True,
-                              drop_last=True)
+                              drop_last=True,
+                              persistent_workers=True)
 
     if rank == 0:
         validset = MelDataset(validation_filelist, h.segment_size, h.n_fft, h.num_mels,
@@ -107,7 +108,8 @@ def train(rank, a, h):
                                        sampler=None,
                                        batch_size=1,
                                        pin_memory=True,
-                                       drop_last=True)
+                                       drop_last=True,
+                                       persistent_workers=True)
 
         sw = SummaryWriter(os.path.join(a.checkpoint_path, 'logs'))
 
