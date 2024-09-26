@@ -11,7 +11,6 @@ from meldataset import MAX_WAV_VALUE, mel_spectrogram, load_wav
 from librosa.util import normalize
 from models import Generator, Encoder, Quantizer
 from tqdm import tqdm
-from pyannote.audio import Inference
 import json
 
 h = None

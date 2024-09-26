@@ -2,7 +2,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from trainer import Wav2TTS
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies import DDPStrategy
 import argparse
 import json
 import os
@@ -74,7 +74,7 @@ parser.add_argument('--max_output_length', type=int, default=1500)
 parser.add_argument('--phone_context_window', type=int, default=3)
 
 #Data
-parser.add_argument('--sample_rate', type=int, default=16000)
+parser.add_argument('--sample_rate', type=int, default=32000)
 parser.add_argument('--n_codes', type=int, default=160)
 parser.add_argument('--n_cluster_groups', type=int, default=4)
 
@@ -87,7 +87,7 @@ with open(os.path.join(args.saving_path, 'config.json'), 'w') as f:
 fname_prefix = f''
 
 if args.accelerator == 'ddp':
-    args.accelerator = DDPPlugin(find_unused_parameters=False)
+    args.accelerator = DDPStrategy(find_unused_parameters=False)
 
 checkpoint_callback = ModelCheckpoint(
     dirpath=args.saving_path,
@@ -102,18 +102,16 @@ logger = TensorBoardLogger(args.sampledir, name="VQ-TTS", version=args.version)
 
 wrapper = Trainer(
     precision=args.precision,
-    amp_backend='native',
     callbacks=[checkpoint_callback],
-    resume_from_checkpoint=args.resume_checkpoint,
     val_check_interval=args.val_check_interval,
     num_sanity_val_steps=0,
     max_steps=args.training_step,
-    gpus=(-1 if args.distributed else 1),
+    devices=(-1 if args.distributed else 1),
     strategy=(args.accelerator if args.distributed else None),
-    replace_sampler_ddp=False,
+    use_distributed_sampler=False,
     accumulate_grad_batches=args.accumulate_grad_batches,
     logger=logger,
-    check_val_every_n_epoch=args.check_val_every_n_epoch
+    check_val_every_n_epoch=None
 )
 model = Wav2TTS(args)
-wrapper.fit(model)
+wrapper.fit(model, ckpt_path=args.resume_checkpoint)

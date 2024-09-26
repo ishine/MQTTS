@@ -7,11 +7,13 @@ from modules.transformers import TransformerEncoderLayer, TransformerEncoder, Tr
 from torch.utils import data
 from modules.vocoder import Vocoder
 import soundfile as sf
-import librosa
 from librosa.util import normalize
-from pyannote.audio import Inference
+from pyannote.audio import Model,Inference
 import random
 from tqdm import tqdm
+
+from quantizer.speaker_embbedding import embedding_model_path
+
 
 class Wav2TTS_infer(nn.Module):
     def __init__(self, hp):
@@ -19,17 +21,19 @@ class Wav2TTS_infer(nn.Module):
         self.hp = hp
         self.hp.init = 'std'
         self.TTSdecoder = TTSDecoder(hp, len(self.hp.phoneset))
-        self.spkr_linear = nn.Linear(512, hp.hidden_size)
-        self.phone_embedding = nn.Embedding(len(self.hp.phoneset), hp.hidden_size, padding_idx=self.hp.phoneset.index('<pad>'))
+        # self.spkr_linear = nn.Linear(512, hp.hidden_size)
+        self.sid_embedding = nn.Embedding(300, hp.hidden_size)
+        self.phone_embedding = nn.Embedding(len(self.hp.phoneset), hp.hidden_size, padding_idx=self.hp.phoneset.index('_'))
         self.load()
-        self.spkr_embedding = Inference("pyannote/embedding", window="whole")
+        model = Model.from_pretrained(embedding_model_path)
+        self.spkr_embedding = Inference(model, window="whole")
         self.vocoder = Vocoder(hp.vocoder_config_path, hp.vocoder_ckpt_path, with_encoder=True)
 
     def load(self):
         state_dict = torch.load(self.hp.model_path)['state_dict']
         print (self.load_state_dict(state_dict, strict=False))
 
-    def forward(self, wavs, phones):
+    def forward(self, wavs,sids, phones):
         self.eval()
         with torch.no_grad():
             batch_size = len(wavs)
@@ -43,8 +47,9 @@ class Wav2TTS_infer(nn.Module):
                     speaker_embedding = self.spkr_embedding({'waveform': wav, 'sample_rate': self.hp.sample_rate})
                     speaker_embeddings.append(speaker_embedding)
             speaker_embeddings = torch.cuda.FloatTensor(np.array(speaker_embeddings))
+            sids = torch.cuda.LongTensor(np.array(sids))
             norm_spkr = F.normalize(speaker_embeddings, dim=-1)
-            speaker_embedding = self.spkr_linear(norm_spkr)
+            speaker_embedding = self.sid_embedding(sids)
             low_background_noise = torch.randn(batch_size, int(self.hp.sample_rate * 5.0)) * self.hp.prior_noise_level
             base_prior = self.vocoder.encode(low_background_noise.cuda())
             if self.hp.clean_speech_prior:
@@ -53,7 +58,8 @@ class Wav2TTS_infer(nn.Module):
                 prior = None
             phone_features, phone_masks = [], []
             for phone in phones:
-                phone = [self.hp.phoneset.index(ph) for ph in phone if ph != ' ' and ph in self.hp.phoneset]
+                print(phone)
+                phone = [self.hp.phoneset.index(ph) for ph in phone]
                 phone = np.array(phone)
                 phone_features.append(phone)
             #Pad phones
@@ -61,7 +67,7 @@ class Wav2TTS_infer(nn.Module):
             for i, ph in enumerate(phone_features):
                 to_pad = maxlen - len(ph)
                 pad = np.zeros([to_pad,], dtype=np.float32)
-                pad.fill(self.hp.phoneset.index('<pad>'))
+                pad.fill(self.hp.phoneset.index('_'))
                 phone_features[i] = np.concatenate([ph, pad], 0)
                 mask = [False] * len(ph)+ [True] * to_pad
                 phone_masks.append(mask)
@@ -73,7 +79,7 @@ class Wav2TTS_infer(nn.Module):
             maxlen = max([len(x) for x in synthetic])
             for i, s in enumerate(synthetic):
                 to_pad = maxlen - len(s)
-                lengths.append(len(s) * 256) # Have to change according to vocoder stride!
+                lengths.append(len(s) * 512) # Have to change according to vocoder stride!
                 pad = base_prior[i, base_prior.size(1)//2].unsqueeze(0).expand(to_pad, -1)
                 if self.hp.clean_speech_prior:
                     s = torch.cat([prior[i, :], s, pad], 0)
